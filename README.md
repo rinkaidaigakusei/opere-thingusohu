@@ -23,7 +23,9 @@
 
 ### Webで使う
 
-GitHub Pages で公開している場合は、そのURLを開くだけです。
+下のURLを開くだけです（インストール不要）。
+
+👉 **https://rinkaidaigakusei.github.io/opere-thingusohu/**
 
 ### 自分のPCで使う（Windows）
 

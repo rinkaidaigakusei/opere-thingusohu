@@ -43,15 +43,15 @@
 
 ### A. Webで使う（いちばん簡単）
 
-公開されている URL をブラウザで開くだけです（公開されている場合）。
+下の URL をブラウザで開くだけです。インストールは要りません。
 
 ```
-https://＜GitHubのユーザー名＞.github.io/server-exam-support/
+https://rinkaidaigakusei.github.io/opere-thingusohu/
 ```
 
 ### B. 自分のPCで使う（Windows）
 
-1. このページ上の緑色の **「Code」ボタン → 「Download ZIP」** でダウンロード
+1. [GitHub のページ](https://github.com/rinkaidaigakusei/opere-thingusohu) の緑色の **「Code」ボタン → 「Download ZIP」** でダウンロード
 2. ダウンロードした ZIP を右クリック → **「すべて展開」**
 3. 展開したフォルダの中の **`start.bat`** をダブルクリック
 4. ブラウザで `http://127.0.0.1:8755/` が開きます
