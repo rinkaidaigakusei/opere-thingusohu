@@ -1,0 +1,124 @@
+{
+  "category": "wordpress",
+  "description": "note「WordPressのインストール」由来のテンプレート。",
+  "templates": [
+    {
+      "id": "wp-su",
+      "title": "WordPressを設置するユーザーに切り替え",
+      "kind": "aux",
+      "modes": ["bulk", "staged"],
+      "runAs": "→ {{user}}",
+      "workdir": "/home/{{user}}/{{public_dir}}",
+      "lines": [
+        { "original": "su - linux", "template": "su - {{user}}", "kind": "aux" },
+        { "original": "cd www/", "template": "cd {{public_dir}}/", "kind": "aux" }
+      ],
+      "inputs": [
+        { "label": "su のパスワード", "value": "{{password}}", "secret": true }
+      ],
+      "variables": {
+        "user": { "noteValue": "linux" },
+        "public_dir": { "noteValue": "www", "confirmIfDifferent": true },
+        "password": { "secret": true }
+      },
+      "cautionWhen": {
+        "isEc2User": "設置ユーザーが ec2-user です。別ユーザーに su している場合は exit で ec2-user に戻ってください（ec2-user にはパスワードが無いため su - ec2-user は失敗することがあります）。"
+      },
+      "prerequisites": "ユーザーディレクトリ開放済み・phpMyAdminでデータベース作成済み",
+      "notes": ["もし別アカウントでログインしている場合、ec2-userになっておく（note記載）"],
+      "verify": "プロンプトが [{{user}}@... {{public_dir}}]$ になること",
+      "source": "note: WordPressのインストール",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ユーザー名・公開ディレクトリを変数化" }]
+    },
+    {
+      "id": "wp-subdir",
+      "title": "設置用サブディレクトリの作成（必要に応じて）",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home/{{user}}/{{public_dir}}/{{subdir}}",
+      "lines": [
+        { "original": "mkdir dsXXXXXXX", "template": "mkdir {{subdir}}" },
+        { "original": "cd dsXXXXXXX/", "template": "cd {{subdir}}/", "kind": "aux" }
+      ],
+      "variables": { "subdir": { "noteValue": "dsXXXXXXX" } },
+      "prerequisites": "{{user}} に切り替え済み",
+      "notes": ["設置ディレクトリが /home/ユーザー/www/ だけなら、この2つはやらなくてもいい（note記載）。学籍番号などのサブディレクトリが指定された場合のみ表示しています"],
+      "verify": "プロンプトが {{subdir}} になること",
+      "source": "note: WordPressのインストール（必要に応じて）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ディレクトリ名を変数化" }]
+    },
+    {
+      "id": "wp-download",
+      "title": "WordPressのダウンロード・展開",
+      "kind": "bulk",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/var/www",
+      "lines": [
+        {
+          "original": "cd /var/www &&wget https://ja.wordpress.org/latest-ja.tar.gz&&tar xzvf latest-ja.tar.gz",
+          "staged": [
+            "cd /var/www",
+            "wget https://ja.wordpress.org/latest-ja.tar.gz",
+            "tar xzvf latest-ja.tar.gz"
+          ]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "{{user}} に切り替え済み",
+      "notes": ["展開したら wordpress にアクセスする（note記載）"],
+      "verify": "{{wp_url}} にアクセスできること",
+      "source": "note: wordpressをインストール",
+      "history": [
+        { "date": "2026-11-17", "change": "初期登録（原文）" },
+        { "date": "2026-11-17", "change": "cd 先を設置ディレクトリに変える変更案を削除（ユーザー判断：note原文のまま）" }
+      ]
+    },
+    {
+      "id": "wp-config",
+      "title": "wp-config.php の編集",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "wordpress/",
+      "lines": [
+        {
+          "original": "cd wordpress/&&vi wp-config.php",
+          "staged": ["cd wordpress/", "vi wp-config.php"]
+        },
+        { "original": ":set paste", "kind": "individual", "note": "vi起動後に入力" }
+      ],
+      "reference": [
+        { "label": "データベース名", "value": "{{db_name}}" },
+        { "label": "照合順序", "value": "{{db_collation}}" }
+      ],
+      "variables": {},
+      "prerequisites": "WordPress展開済み・ブラウザでwordpressにアクセス済み",
+      "notes": ["vimを起動したら :set paste を打って、その後にEnterを押して「i」を押す → 貼り付ける（note記載）"],
+      "verify": ":wq で保存後、ブラウザでWordPressのインストール画面が表示されること",
+      "source": "note: WordPressのインストール（wp-config.php）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    },
+    {
+      "id": "wp-uploads",
+      "title": "画像アップロード用ディレクトリの作成",
+      "kind": "bulk",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "wordpress/ → wordpress/wp-content/",
+      "lines": [
+        {
+          "original": "cd wp-content/&&mkdir uploads&&chmod 777 uploads/",
+          "staged": ["cd wp-content/", "mkdir uploads", "chmod 777 uploads/"]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "wordpress/ ディレクトリ内にいること",
+      "notes": ["※wordpressを実行しているユーザー（{{user}}）であることに注意する（note記載）"],
+      "verify": "WordPressの投稿で画像をアップロードできること",
+      "source": "note: WordPressのインストール（画像アップロード）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    }
+  ]
+}

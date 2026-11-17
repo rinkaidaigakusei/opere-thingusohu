@@ -1,0 +1,259 @@
+{
+  "description": "課題の種類ごとの定義。fields = 確認画面に出す設定値（key=課題内の名前, var=アプリ全体で一意な変数名）。steps = 手順書に並べるテンプレート。{p} は WordPress 課題ごとの接頭辞（wordpress / wordpress_t6 …）に置き換わる。",
+  "profile": {
+    "name": "受験者情報（問題文には書かれていない値）",
+    "fields": [
+      { "key": "student_id", "var": "student_id", "label": "学籍番号", "hint": "問題文の「学籍番号」をこの値で置き換えます（未入力なら未設定のまま）" },
+      { "key": "email_address", "var": "email_address", "label": "学校のメールアドレス", "hint": "問題文の「学校の自分のメールアドレス」に使います" }
+    ]
+  },
+  "types": {
+    "server": {
+      "name": "サーバ基本情報",
+      "fields": [
+        { "key": "server_name", "var": "server_name", "label": "サーバ名" },
+        { "key": "machine_image", "var": "machine_image", "label": "OS・マシンイメージ" },
+        { "key": "instance_type", "var": "instance_type", "label": "インスタンスタイプ" },
+        { "key": "storage", "var": "storage", "label": "ストレージ容量" },
+        { "key": "key_pair_name", "var": "key_pair_name", "label": "キーペア名" },
+        { "key": "ports", "var": "ports", "label": "開放するポート" },
+        { "key": "common_password", "var": "common_password", "label": "共通パスワード", "secret": true },
+        { "key": "public_dns", "var": "public_dns", "label": "パブリックDNS（接続後に入力）", "workValue": true, "hint": "AWSの「接続」の ssh コマンドやターミナル出力を貼り付けてもOK" },
+        { "key": "ssh_chmod", "var": "ssh_chmod", "label": "キーの権限設定（AWSの例）", "workValue": true, "hint": "貼り付けから自動で入ります" },
+        { "key": "ssh_command", "var": "ssh_command", "label": "SSH接続コマンド（AWSの例）", "workValue": true, "hint": "貼り付けから自動で入ります" },
+        { "key": "site_root", "var": "site_root", "label": "サーバのURL（パブリックDNSから作成）", "derived": true, "workValue": true }
+      ],
+      "steps": [{ "template": "aws-launch" }]
+    },
+    "lamp": {
+      "name": "LAMP環境",
+      "fields": [
+        { "key": "phpmyadmin_url", "var": "phpmyadmin_url", "label": "phpMyAdminのURL" },
+        { "key": "mysql_root_password", "var": "mysql_root_password", "label": "MySQL rootパスワード", "secret": true },
+        { "key": "mysql_temp_password", "var": "mysql_temp_password", "label": "MySQL初期パスワード（作業中に確認）", "secret": true, "workValue": true, "hint": "mysqld.log の root の後ろ（作業中に入力）" }
+      ],
+      "steps": [
+        { "template": "lamp-all" },
+        { "template": "lamp-apache", "coveredBy": "lamp-all" },
+        { "template": "lamp-apache-check" },
+        { "template": "lamp-php", "coveredBy": "lamp-all" },
+        { "template": "lamp-php-check" },
+        { "template": "lamp-mysql", "coveredBy": "lamp-all" },
+        { "template": "lamp-mysql-password" },
+        { "template": "lamp-phpmyadmin", "coveredBy": "lamp-all" }
+      ]
+    },
+    "userdir": {
+      "name": "ユーザーディレクトリ",
+      "fields": [
+        { "key": "user", "var": "linux_user", "label": "Linuxユーザー名" },
+        { "key": "password", "var": "linux_password", "label": "Linuxユーザーパスワード", "secret": true },
+        { "key": "public_dir", "var": "public_dir", "label": "公開ディレクトリ名" },
+        { "key": "index_file_name", "var": "index_file_name", "label": "作成するファイル名" },
+        { "key": "index_file_content", "var": "index_file_content", "label": "ファイル内容", "multiline": true },
+        { "key": "url", "var": "userdir_url", "label": "投稿URL" }
+      ],
+      "steps": [
+        { "template": "ud-useradd" },
+        { "template": "ud-passwd" },
+        { "template": "ud-conf" },
+        { "template": "ud-restart" },
+        { "template": "ud-su" },
+        { "template": "ud-chmod" },
+        { "template": "ud-mkdir" },
+        {
+          "inline": {
+            "id": "ud-index",
+            "title": "{{index_file_name}} の作成",
+            "unregistered": true,
+            "runAs": "{{user}}",
+            "workdir": "/home/{{user}}/{{public_dir}}",
+            "fileContent": { "label": "{{index_file_name}} の内容（問題文より）", "content": "{{index_file_content}}" },
+            "notes": ["ファイル作成のコマンドはnote記事に記載が無いため未登録です。内容のコピーのみ使えます。"],
+            "verify": "{{url}} にアクセスして内容が表示されること"
+          }
+        }
+      ]
+    },
+    "basic": {
+      "name": "Basic認証",
+      "unregistered": true,
+      "fields": [
+        { "key": "owner", "var": "basic_auth_owner", "label": "対象ディレクトリの所有ユーザー" },
+        { "key": "parent_dir", "var": "basic_auth_parent_dir", "label": "親ディレクトリ" },
+        { "key": "dir", "var": "basic_auth_dir", "label": "認証対象ディレクトリ" },
+        { "key": "id", "var": "basic_auth_id", "label": "Basic認証ID" },
+        { "key": "password", "var": "basic_auth_password", "label": "Basic認証パスワード", "secret": true },
+        { "key": "directory_index", "var": "basic_auth_directory_index", "label": "DirectoryIndexの設定条件" },
+        { "key": "url", "var": "basic_auth_url", "label": "投稿URL" }
+      ],
+      "steps": []
+    },
+    "wordpress": {
+      "name": "WordPress",
+      "fields": [
+        { "key": "user", "var": "{p}_user", "label": "WordPressを設置するLinuxユーザー" },
+        { "key": "linux_password", "var": "{p}_linux_password", "label": "Linuxユーザーのパスワード（ユーザー新規作成・su 用）", "secret": true },
+        { "key": "db_name", "var": "{p}_db_name", "label": "データベース名" },
+        { "key": "db_collation", "var": "{p}_db_collation", "label": "データベース照合順序" },
+        { "key": "install_dir", "var": "{p}_install_dir", "label": "設置ディレクトリ" },
+        { "key": "install_condition", "var": "{p}_install_condition", "label": "設置条件" },
+        { "key": "public_dir", "var": "{p}_public_dir", "label": "公開ディレクトリ（設置ディレクトリから算出）", "derived": true },
+        { "key": "subdir", "var": "{p}_subdir", "label": "サブディレクトリ（設置ディレクトリから算出）", "derived": true },
+        { "key": "target_dir", "var": "{p}_target_dir", "label": "展開先ディレクトリ（設置ディレクトリから算出）", "derived": true },
+        { "key": "wp_url", "var": "{p}_wp_url", "label": "WordPressにアクセスするURL（算出）", "derived": true },
+        { "key": "site_title", "var": "{p}_site_title", "label": "サイトタイトル" },
+        { "key": "login_user", "var": "{p}_login_user", "label": "WordPressログインユーザー名" },
+        { "key": "login_password", "var": "{p}_password", "label": "WordPressログインパスワード", "secret": true },
+        { "key": "email", "var": "{p}_email", "label": "メールアドレス" },
+        { "key": "search_engine", "var": "{p}_search_engine", "label": "検索エンジンでの表示" },
+        { "key": "post_title", "var": "{p}_post_title", "label": "投稿タイトル" },
+        { "key": "post_condition", "var": "{p}_post_condition", "label": "投稿条件" },
+        { "key": "url", "var": "{p}_url", "label": "投稿URL" }
+      ],
+      "steps": [
+        {
+          "inline": {
+            "id": "wp-user-info",
+            "title": "このWordPressの設置ユーザーについて",
+            "kind": "checklist",
+            "when": "needsHomeSetup",
+            "runAs": "-",
+            "workdir": "-",
+            "notes": ["{{user}} は課題2のユーザー（{{linux_user}}）と異なるため、note「ユーザーディレクトリの開放」の手順のうち必要なものを先に行います（userdir.conf の編集は1回だけでよい）。"],
+            "verify": "-"
+          }
+        },
+        { "template": "ud-useradd", "when": "isNewUser", "bind": { "password": "linux_password" } },
+        { "template": "ud-passwd", "when": "isNewUser", "bind": { "password": "linux_password" } },
+        { "template": "ud-su", "when": "isNewUser", "bind": { "password": "linux_password" } },
+        { "template": "ud-chmod", "when": "needsHomeSetup" },
+        { "template": "ud-mkdir", "when": "needsHomeSetup" },
+        {
+          "inline": {
+            "id": "wp-db",
+            "title": "phpMyAdminでWordPress用データベースを作成",
+            "kind": "checklist",
+            "runAs": "ブラウザ（phpMyAdmin / root）",
+            "workdir": "{{phpmyadmin_url}}",
+            "reference": [
+              { "label": "データベース名", "value": "{{db_name}}" },
+              { "label": "照合順序", "value": "{{db_collation}}" }
+            ],
+            "notes": ["phpMyAdmin にアクセスする → テーブル名→wordpress　general_ci にする → 作成したら一旦放置する（note記載。名前と照合順序は試験の指定に合わせる）"],
+            "verify": "データベース {{db_name}} が作成されていること",
+            "source": "note: wordpressをインストール（phpMyAdmin）",
+            "history": [{ "date": "2026-11-17", "change": "note全文の確認により登録（コマンドなし・画面操作）" }]
+          }
+        },
+        { "template": "wp-su", "when": "!needsHomeSetup", "bind": { "password": "linux_password" } },
+        { "template": "wp-subdir", "when": "hasSubdir" },
+        { "template": "wp-download" },
+        { "template": "wp-config" },
+        { "template": "wp-uploads" },
+        {
+          "inline": {
+            "id": "wp-top",
+            "title": "~{{user}}/ でトップ画面を表示する設定",
+            "unregistered": true,
+            "when": "installAtTop",
+            "runAs": "{{user}}",
+            "workdir": "-",
+            "reference": [{ "label": "問題文の条件", "value": "{{install_condition}}" }],
+            "notes": ["note記事の手順では wordpress/ ディレクトリに展開されるため、~{{user}}/ 直下でトップ画面を表示するための手順はnoteにありません（未登録）。"],
+            "verify": "{{url}} でWordPressのトップ画面が表示されること"
+          }
+        },
+        {
+          "inline": {
+            "id": "wp-setup",
+            "title": "WordPressのインストール画面での設定・投稿",
+            "kind": "checklist",
+            "runAs": "ブラウザ",
+            "workdir": "-",
+            "reference": [
+              { "label": "サイトのタイトル", "value": "{{site_title}}" },
+              { "label": "ユーザー名", "value": "{{login_user}}" },
+              { "label": "パスワード", "value": "{{login_password}}", "secret": true },
+              { "label": "メールアドレス", "value": "{{email}}" },
+              { "label": "検索エンジンでの表示", "value": "{{search_engine}}" },
+              { "label": "投稿タイトル", "value": "{{post_title}}" },
+              { "label": "投稿条件", "value": "{{post_condition}}" },
+              { "label": "投稿URL", "value": "{{url}}" }
+            ],
+            "notes": ["投稿するURLは、管理者の変更できるやつではなく、みんなが見られる方のもの（note記載）", "インストールするアカウントに注意する（note記載）"],
+            "verify": "投稿を外部公開し、{{url}} の形式のURLで表示できること"
+          }
+        }
+      ]
+    },
+    "jupyter": {
+      "name": "Jupyter Notebook",
+      "fields": [
+        { "key": "user", "var": "jupyter_user", "label": "設置ユーザー" },
+        { "key": "password", "var": "jupyter_password", "label": "ログインパスワード", "secret": true },
+        { "key": "port", "var": "jupyter_port", "label": "アクセスポート" },
+        { "key": "program_condition", "var": "jupyter_program_condition", "label": "実行するプログラムの条件" },
+        { "key": "url", "var": "jupyter_url", "label": "投稿URL" }
+      ],
+      "steps": [
+        { "template": "jp-su" },
+        { "template": "jp-install" },
+        { "template": "jp-password" },
+        { "template": "jp-start" },
+        {
+          "inline": {
+            "id": "jp-program",
+            "title": "Jupyterファイルを作成してPythonプログラムを実行",
+            "kind": "checklist",
+            "runAs": "ブラウザ",
+            "workdir": "-",
+            "reference": [{ "label": "問題文の条件", "value": "{{program_condition}}" }],
+            "notes": [],
+            "verify": "{{url}} でノートブックが実行済みであること"
+          }
+        }
+      ]
+    },
+    "wpadmin_basic": {
+      "name": "wp-adminのBasic認証",
+      "unregistered": true,
+      "fields": [
+        { "key": "target_task", "var": "wpadmin_target_task", "label": "対象のWordPress（課題番号）" },
+        { "key": "id", "var": "wpadmin_basic_auth_id", "label": "Basic認証ID" },
+        { "key": "password", "var": "wpadmin_basic_auth_password", "label": "Basic認証パスワード", "secret": true },
+        { "key": "conditions", "var": "wpadmin_conditions", "label": "その他の指定条件", "multiline": true },
+        { "key": "url", "var": "wpadmin_url", "label": "投稿URL" }
+      ],
+      "steps": []
+    },
+    "docker_mysql": {
+      "name": "DockerのMySQLコンテナ",
+      "unregistered": true,
+      "fields": [
+        { "key": "image", "var": "docker_image", "label": "Dockerのイメージ名" },
+        { "key": "container_name", "var": "docker_container_name", "label": "Dockerのコンテナ名" },
+        { "key": "password", "var": "docker_password", "label": "MySQLのパスワード", "secret": true },
+        { "key": "install_url", "var": "docker_install_url", "label": "インストール手順のURL" },
+        { "key": "image_url", "var": "docker_image_url", "label": "イメージのURL" },
+        { "key": "notes", "var": "docker_notes", "label": "その他の指定条件" }
+      ],
+      "steps": []
+    },
+    "docker_other": {
+      "name": "別イメージのDockerコンテナ",
+      "unregistered": true,
+      "fields": [
+        { "key": "condition", "var": "docker_other_condition", "label": "指定条件" },
+        { "key": "example", "var": "docker_other_example", "label": "例" }
+      ],
+      "steps": []
+    },
+    "unknown": {
+      "name": "種類を判定できない課題",
+      "unregistered": true,
+      "fields": [],
+      "steps": []
+    }
+  }
+}

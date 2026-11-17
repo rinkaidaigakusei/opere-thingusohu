@@ -1,0 +1,214 @@
+{
+  "category": "lamp",
+  "description": "note「LAMP環境の構築」由来のテンプレート。コマンドは原文のまま（試験ごとに変わる値だけ変数化）。",
+  "templates": [
+    {
+      "id": "lamp-all",
+      "title": "LAMP環境 一括コマンド（Apache・PHP・MySQL・phpMyAdmin）",
+      "kind": "bulk",
+      "modes": ["bulk"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~（ログイン直後）",
+      "lines": [
+        {
+          "original": "sudo yum install python3-pip -y&&sudo yum install -y httpd && sudo systemctl start httpd && sudo systemctl enable httpd && sudo yum install -y php php-mbstring php-mysqlnd && sudo systemctl restart httpd && sudo rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023 && sudo dnf -y localinstall https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm && sudo dnf -y install mysql mysql-community-client && sudo yum -y install mysql mysql-devel mysql-server && sudo systemctl start mysqld && sudo systemctl enable mysqld && cd /var/www/html && sudo wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz && sudo mkdir phpMyAdmin && sudo tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1 && sudo cat /var/log/mysqld.log | grep root && cd &&sudo yum install wget"
+        }
+      ],
+      "variables": {},
+      "prerequisites": "EC2インスタンスにSSH接続済み",
+      "inputs": [
+        { "label": "表示された初期パスワード（rootの後ろ）", "value": "{{mysql_temp_password}}", "secret": true }
+      ],
+      "notes": [
+        "多分実行すると動くが、処理に時間がかかる可能性が高いため、少しずつ実行したほうが結果的に良い（note記載）→「段階実行モード」で分割表示できます。",
+        "この一括コマンドには phpMyAdmin の tar.gz 削除（sudo rm …）は含まれていません（noteの原文のまま）。",
+        "最後に表示される mysqld.log の root の後ろが初期パスワード。上の欄に入力しておくと次のステップに反映されます。"
+      ],
+      "verify": "エラーなく終了し、最後に root の一時パスワードの行が表示されること。{{site_root}} で「It works!」、{{phpmyadmin_url}} でphpMyAdminが開くこと",
+      "source": "note: Apache関連の一括コマンド",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-6 の原文）" }]
+    },
+    {
+      "id": "lamp-apache",
+      "title": "Apacheの導入",
+      "kind": "bulk",
+      "modes": ["staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~（ログイン直後）",
+      "lines": [
+        {
+          "original": "sudo yum install -y httpd&&sudo systemctl start httpd&&sudo systemctl enable httpd&&sudo yum install python3-pip -y&&sudo yum install wget",
+          "staged": [
+            "sudo yum install -y httpd",
+            "sudo systemctl start httpd",
+            "sudo systemctl enable httpd",
+            "sudo yum install python3-pip -y",
+            "sudo yum install wget"
+          ]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "EC2インスタンスにSSH接続済み",
+      "notes": ["HTTPをインストールする＋Jupiter notebookのために先にpython3もインストールしておく → サーバーを起動＋自動起動（note記載）"],
+      "verify": "{{site_root}} にアクセスして「It works!」が出ればOK",
+      "source": "note: LAMP環境の構築 > Apacheの導入",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-1 の原文）" }]
+    },
+    {
+      "id": "lamp-apache-check",
+      "title": "Apacheが動いているか確認（It works!）",
+      "kind": "checklist",
+      "modes": ["bulk", "staged"],
+      "runAs": "ブラウザ",
+      "workdir": "-",
+      "lines": [],
+      "checkUrl": { "label": "サーバのページを開く", "url": "{{site_root}}" },
+      "guide": [
+        { "text": "上のボタン（またはパブリックDNS）をブラウザで開く。パブリックDNSは手順書上部の「接続先」に貼り付けておくとリンクになります" },
+        { "text": "白い画面に「It works!」と表示されればOK", "img": "img/it-works.png" }
+      ],
+      "variables": {},
+      "prerequisites": "Apacheの導入（または一括コマンド）が終わっていること",
+      "notes": ["上記の3つのコマンドを実行したら、実際にサーバーが起動しているかをチェックする（note記載）", "表示されない場合は、セキュリティグループで HTTP を許可しているか確認"],
+      "verify": "{{site_root}} で「It works!」が表示されること",
+      "source": "note: LAMP環境を構築する > Apacheの導入（IT works が出ればOK）",
+      "history": [{ "date": "2026-11-18", "change": "ユーザー依頼で確認ステップを追加（コマンドなし・画面確認）" }]
+    },
+    {
+      "id": "lamp-php",
+      "title": "PHPの導入",
+      "kind": "bulk",
+      "modes": ["staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        {
+          "original": "sudo yum install -y php php-mbstring php-mysqlnd&&sudo systemctl restart httpd",
+          "staged": [
+            "sudo yum install -y php php-mbstring php-mysqlnd",
+            "sudo systemctl restart httpd"
+          ]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "Apache導入済み",
+      "notes": [],
+      "verify": "エラーなく終了すること",
+      "source": "note: LAMP環境の構築 > PHPの導入",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-2 の原文）" }]
+    },
+    {
+      "id": "lamp-php-check",
+      "title": "PHP導入確認（test.php）",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "optional": true,
+      "runAs": "ec2-user（sudo）",
+      "workdir": "/var/www/html/",
+      "lines": [
+        { "original": "cd /var/www/html/", "kind": "aux" },
+        { "original": "sudo vi test.php", "kind": "individual" }
+      ],
+      "fileContent": {
+        "label": "test.php の内容",
+        "content": "<?php phpinfo();?>"
+      },
+      "guide": [
+        { "text": "sudo vi test.php を実行すると、下のような画面（左に ~ が並び、一番下に \"test.php\"）になる。この状態ではまだ文字を入力できない", "img": "img/vi-opened.png" },
+        { "text": "キーボードの「i」キーを押す → 一番下が「-- INSERT --」になれば入力できる状態（インサートモード）", "img": "img/vi-insert.png" },
+        { "text": "上の「test.php の内容」をコピーして貼り付ける" },
+        { "text": "Esc キーを押してから :w → Enter（保存）、:q → Enter（終了）" }
+      ],
+      "variables": {},
+      "prerequisites": "PHP導入済み",
+      "notes": ["もし問題じゃなければやらなくてもいい（note記載）", "vimの編集が終わったら :w :q で保存終了すること。確認のために cat を使ってもいい"],
+      "verify": "{{site_root}}test.php にアクセスしてPHPの情報ページが表示されること",
+      "source": "note: LAMP環境の構築 > PHP導入確認",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-3 の原文）" }]
+    },
+    {
+      "id": "lamp-mysql",
+      "title": "MySQLの導入",
+      "kind": "bulk",
+      "modes": ["staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        {
+          "original": "sudo rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023&&sudo dnf -y localinstall https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm&&sudo dnf -y install mysql mysql-community-client&&sudo yum -y install mysql mysql-devel mysql-server&&sudo systemctl start mysqld &&sudo systemctl enable mysqld&&sudo cat /var/log/mysqld.log | grep root",
+          "staged": [
+            "sudo rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023",
+            "sudo dnf -y localinstall https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm",
+            "sudo dnf -y install mysql mysql-community-client",
+            "sudo yum -y install mysql mysql-devel mysql-server",
+            "sudo systemctl start mysqld",
+            "sudo systemctl enable mysqld",
+            "sudo cat /var/log/mysqld.log | grep root"
+          ]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "Apache・PHP導入済み",
+      "inputs": [
+        { "label": "表示された初期パスワード（rootの後ろ）", "value": "{{mysql_temp_password}}", "secret": true }
+      ],
+      "notes": ["最後に表示される root の後ろが初期パスワード。上の欄に入力しておくと次のステップに反映されます"],
+      "verify": "mysqld.log の root の行（一時パスワード）が表示されること",
+      "source": "note: LAMP環境の構築 > MySQLの導入",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-4 の原文）" }]
+    },
+    {
+      "id": "lamp-mysql-password",
+      "title": "MySQL rootパスワードの変更",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "ec2-user",
+      "workdir": "~",
+      "lines": [
+        { "original": "mysql -u root -p", "kind": "individual" },
+        {
+          "original": "set password for root@localhost = 'LinuxOS99@';",
+          "template": "set password for root@localhost = '{{mysql_root_password}}';",
+          "kind": "individual"
+        }
+      ],
+      "inputs": [
+        { "label": "最初のパスワード入力（初期パスワード）", "value": "{{mysql_temp_password}}", "secret": true }
+      ],
+      "variables": {
+        "mysql_root_password": { "noteValue": "LinuxOS99@", "secret": true }
+      },
+      "prerequisites": "MySQL導入済み・一時パスワードを確認済み",
+      "notes": ["mysqld.log の root の後ろが初期パスワード。ログイン時に必要なので覚えておく", "パスワードはテストで指示される可能性が高いため、それに合わせて変更する（note記載）", "終わったら exit でログアウトする"],
+      "verify": "phpMyAdminに root と指定パスワードでログインできること",
+      "source": "note: LAMP環境の構築 > MySQLの導入（パスワード変更）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。パスワード部分のみ変数化" }]
+    },
+    {
+      "id": "lamp-phpmyadmin",
+      "title": "phpMyAdminのインストール",
+      "kind": "bulk",
+      "modes": ["staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "/var/www/html",
+      "lines": [
+        {
+          "original": "cd /var/www/html&&sudo wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz&&sudo mkdir phpMyAdmin && sudo tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1&&sudo rm phpMyAdmin-latest-all-languages.tar.gz",
+          "staged": [
+            "cd /var/www/html",
+            "sudo wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz",
+            "sudo mkdir phpMyAdmin",
+            "sudo tar -xvzf phpMyAdmin-latest-all-languages.tar.gz -C phpMyAdmin --strip-components 1",
+            "sudo rm phpMyAdmin-latest-all-languages.tar.gz"
+          ]
+        }
+      ],
+      "variables": {},
+      "prerequisites": "MySQL導入済み",
+      "notes": ["/phpMyAdmin の M と A は大文字じゃないとアクセスできない（note記載）"],
+      "verify": "{{phpmyadmin_url}} にアクセスし、ユーザー名 root ／ パスワード（テストで決まっているもの）でログインできること",
+      "source": "note: LAMP環境の構築 > phpMyAdminのインストール",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（仕様書 8-5 の原文）" }]
+    }
+  ]
+}

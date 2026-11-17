@@ -1,0 +1,80 @@
+{
+  "category": "jupyter",
+  "description": "note「Jupyter Notebookのインストール」由来のテンプレート。設置ユーザーに切り替えた状態で実行する。",
+  "templates": [
+    {
+      "id": "jp-su",
+      "title": "Jupyterを設置するユーザーに切り替え",
+      "kind": "aux",
+      "modes": ["bulk", "staged"],
+      "runAs": "→ {{user}}",
+      "workdir": "/home/{{user}}",
+      "lines": [
+        { "original": "su - linux", "template": "su - {{user}}", "kind": "aux" }
+      ],
+      "inputs": [
+        { "label": "su のパスワード（Linuxユーザーのパスワード）", "value": "{{linux_password}}", "secret": true }
+      ],
+      "variables": { "user": { "noteValue": "linux" } },
+      "prerequisites": "Jupyter設置ユーザーが作成済み",
+      "notes": ["以下のプログラムはJupyternotebookを設置したいユーザーに移動してから実行すること（note記載）", "既にこのユーザーでログインしている場合は不要"],
+      "verify": "プロンプトが [{{user}}@... ~]$ になること",
+      "source": "note: ユーザーディレクトリの開放（su - linux）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。note「設置ユーザーに切り替えた状態で実行」に合わせ su を表示" }]
+    },
+    {
+      "id": "jp-install",
+      "title": "Jupyter Notebookのインストール",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home/{{user}}",
+      "lines": [
+        { "original": "pip install notebook" }
+      ],
+      "variables": {},
+      "prerequisites": "python3-pip 導入済み（Apacheの導入で一緒に入る）",
+      "notes": [],
+      "verify": "Successfully installed ... と表示されること",
+      "source": "note: Jupyter Notebookのインストール",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    },
+    {
+      "id": "jp-password",
+      "title": "Jupyterのパスワード設定",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home/{{user}}",
+      "lines": [
+        { "original": "jupyter notebook password" }
+      ],
+      "inputs": [
+        { "label": "入力するパスワード（2回）", "value": "{{password}}", "secret": true }
+      ],
+      "variables": { "password": { "secret": true } },
+      "prerequisites": "Jupyter Notebook インストール済み",
+      "notes": ["パスワードを入力すると思うから、指定されたパスワードに変更する（note記載）"],
+      "verify": "パスワードが保存された旨が表示されること",
+      "source": "note: Jupyter Notebookのインストール",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    },
+    {
+      "id": "jp-start",
+      "title": "Jupyter Notebookの起動",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home/{{user}}",
+      "lines": [
+        { "original": "jupyter notebook --ip='0.0.0.0' &" }
+      ],
+      "variables": {},
+      "prerequisites": "パスワード設定済み",
+      "notes": ["ポート8888をきちんと開放しておく。開放していないとアクセスポートを探してタイムエラーを起こす可能性が高い（note記載）", "問題文の条件: {{program_condition}}"],
+      "verify": ".amazonaws.com の後ろに :{{port}} をつけてアクセスし、パスワードでログインできること（{{url}}）",
+      "source": "note: Jupyter Notebookのインストール",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    }
+  ]
+}

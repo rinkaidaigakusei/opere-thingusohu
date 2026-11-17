@@ -1,0 +1,5 @@
+{
+  "category": "basic-auth",
+  "description": "Basic認証・wp-admin専用Basic認証。note記事に具体的なコマンド手順が無いため、テンプレートは未登録。将来ユーザーが登録する場所。",
+  "templates": []
+}

@@ -1,0 +1,40 @@
+{
+  "category": "aws",
+  "description": "サーバ起動設定（AWSコンソールでの手作業）。コマンドは無く、問題文の設定値をチェックリストとして表示する。",
+  "templates": [
+    {
+      "id": "aws-launch",
+      "title": "EC2インスタンスの起動設定",
+      "kind": "checklist",
+      "modes": ["bulk", "staged"],
+      "runAs": "AWSマネジメントコンソール（ブラウザ）",
+      "workdir": "-",
+      "lines": [],
+      "reference": [
+        { "label": "サーバ名", "value": "{{server_name}}" },
+        { "label": "マシンイメージ", "value": "{{machine_image}}" },
+        { "label": "インスタンスタイプ", "value": "{{instance_type}}" },
+        { "label": "ストレージ容量", "value": "{{storage}}" },
+        { "label": "キーペア名", "value": "{{key_pair_name}}" },
+        { "label": "ネットワーク設定", "value": "{{ports}}" },
+        { "label": "キーの権限設定（AWSの例）", "value": "{{ssh_chmod}}" },
+        { "label": "SSH接続（AWSの例）", "value": "{{ssh_command}}" },
+        { "label": "パブリックDNS", "value": "{{public_dns}}" }
+      ],
+      "variables": {},
+      "prerequisites": "-",
+      "notes": [
+        "サーバー名・マシンイメージ・インスタンスタイプ・ストレージは講義通りでOK（note記載）",
+        "キーペアは新しいものを作成する（タイピングミスに注意！）",
+        "インターネットからのHTTPS・HTTPトラフィックを許可する",
+        "Jupyter notebook のために、セキュリティグループルールを追加 → ポート番号 8888・ソース 0.0.0.0/0",
+        "Jupyter notebook のためにストレージを 30GiB にしておく（少なすぎると動かない。起動前に設定を終わらせる）",
+        "接続：パブリックインスタンスに接続 → 一般ユーザーからパブリックドメインを使って接続。AWSに表示される例をコピペして実行する（note記載）",
+        "AWSの「接続方法」の chmod・ssh の2行（またはターミナルの出力）を「パブリックDNS」欄に貼り付けると、パブリックDNSが取り出され、手順書のURL（publicDNS の部分）がすべて実際のアドレスになります"
+      ],
+      "verify": "インスタンスが running になり、SSH接続できること",
+      "source": "note: インスタンスの起動",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（設定値の表示のみ）" }]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Server Exam Support</title>
+  <link rel="stylesheet" href="css/style.css?v=20261118">
+  <link rel="stylesheet" href="css/responsive.css?v=20261118">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">Server Exam Support <span class="brand-sub">サーバ構築演習 手順書ジェネレーター</span></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-action="goto" data-screen="input" role="tab">1. 問題文入力</button>
+      <button class="tab" data-action="goto" data-screen="review" role="tab" disabled>2. 解析結果確認</button>
+      <button class="tab" data-action="goto" data-screen="procedure" role="tab" disabled>3. 手順書</button>
+      <button class="tab" data-action="goto" data-screen="progress" role="tab" disabled>4. 進捗</button>
+    </nav>
+    <button class="memo-toggle" data-action="toggle-memo" title="作業メモ">📝 メモ <span id="memo-count" class="memo-count">0</span></button>
+  </header>
+
+  <!-- 逐次メモ -->
+  <aside id="memo-panel" class="memo-panel" hidden aria-label="作業メモ">
+    <div class="memo-panel-head">
+      <strong>作業メモ</strong>
+      <button class="link" data-action="toggle-memo">閉じる</button>
+    </div>
+    <p class="muted small">追加した順に時刻つきで残ります。リロードしても残り、ブラウザのタブを閉じると消えます（パスワードを書いても永続保存はしません）。</p>
+    <textarea id="memo-input" class="memo-input" rows="3" placeholder="メモを入力（Ctrl+Enterで追加）"></textarea>
+    <div class="memo-add-row">
+      <label class="small"><input type="checkbox" id="memo-link" checked> 今のステップに紐づける</label>
+      <button class="btn btn-primary" data-action="memo-add">追加</button>
+    </div>
+    <ul id="memo-list" class="memo-list"></ul>
+    <div class="memo-panel-foot">
+      <button class="btn" data-action="memo-copy-all">すべてコピー</button>
+      <button class="btn btn-danger" data-action="memo-clear">全部消す</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- 画面1：問題文入力 -->
+    <section id="screen-input" class="screen active">
+      <h2>問題文を貼り付け</h2>
+      <p class="lead">試験問題のPDFから全文をコピーして貼り付け、「解析する」を押してください。解析はこのブラウザの中だけで行い、外部には送信しません。</p>
+      <textarea id="problem-text" spellcheck="false" placeholder="2025年度 サーバ構築演習 …&#10;サーバ名 …&#10;課題 1: LAMP 環境の構築 …"></textarea>
+      <div class="actions">
+        <button class="btn btn-primary" data-action="parse">解析する</button>
+        <button class="btn" data-action="clear-input">クリア</button>
+        <span class="spacer"></span>
+        <label class="sample">過去問で試す：
+          <select id="sample-select">
+            <option value="">選択…</option>
+            <option value="EXAM1">2025年度 1回目</option>
+            <option value="EXAM2">2025年度 2回目</option>
+            <option value="EXAM3">2025年度 3回目</option>
+          </select>
+        </label>
+      </div>
+      <div id="load-error" class="notice notice-error" hidden></div>
+
+      <div class="card manual-card">
+        <h3>問題文を使わずに自分で設定する</h3>
+        <p class="muted small">出題される課題を選んで「設定画面へ」を押すと、空の設定画面が開きます。値はすべて自分で入力します（共通パスワードを入れると、各パスワード欄に仮に反映されます）。</p>
+        <div class="manual-grid">
+          <label><input type="checkbox" data-manual="lamp" checked> LAMP環境</label>
+          <label><input type="checkbox" data-manual="userdir" checked> ユーザーディレクトリ</label>
+          <label><input type="checkbox" data-manual="basic" checked> Basic認証</label>
+          <label><input type="checkbox" data-manual="wordpress" checked> WordPress</label>
+          <label><input type="checkbox" data-manual="jupyter" checked> Jupyter Notebook</label>
+          <label>追加のWordPress <input type="number" id="manual-wp-extra" min="0" max="5" value="0"> 個</label>
+          <label><input type="checkbox" data-manual="wpadmin_basic"> wp-adminのBasic認証</label>
+          <label><input type="checkbox" data-manual="docker_mysql"> DockerのMySQLコンテナ</label>
+          <label><input type="checkbox" data-manual="docker_other"> 別イメージのDockerコンテナ</label>
+        </div>
+        <p class="muted small">課題番号は上から順に 1, 2, 3 … と振ります（追加のWordPressはJupyterの次）。</p>
+        <button class="btn btn-primary" data-action="manual">この内容で設定画面へ</button>
+      </div>
+    </section>
+
+    <!-- 画面2：解析結果確認 -->
+    <section id="screen-review" class="screen">
+      <div id="review"></div>
+    </section>
+
+    <!-- 画面3：手順書 -->
+    <section id="screen-procedure" class="screen">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="表示方法">
+          <button data-action="set-view" data-view="step" class="active">ステップ表示</button>
+          <button data-action="set-view" data-view="list">一覧表示</button>
+        </div>
+        <div class="seg" role="group" aria-label="実行方式">
+          <button data-action="set-mode" data-mode="bulk" class="active">一括実行モード</button>
+          <button data-action="set-mode" data-mode="staged">段階実行モード</button>
+        </div>
+        <div class="mini-progress"><div class="bar"><span id="mini-bar"></span></div><span id="mini-text"></span></div>
+      </div>
+      <p id="mode-help" class="muted small"></p>
+      <div id="conn-bar" class="conn-bar"></div>
+      <div id="procedure-banner"></div>
+      <div id="procedure"></div>
+    </section>
+
+    <!-- 画面4：進捗 -->
+    <section id="screen-progress" class="screen">
+      <div id="progress"></div>
+    </section>
+  </main>
+
+  <script src="js/parsing-rules.js?v=20261118"></script>
+  <script src="js/task-detector.js?v=20261118"></script>
+  <script src="js/parser.js?v=20261118"></script>
+  <script src="js/variable-manager.js?v=20261118"></script>
+  <script src="js/template-engine.js?v=20261118"></script>
+  <script src="js/clipboard.js?v=20261118"></script>
+  <script src="js/ui-common.js?v=20261118"></script>
+  <script src="js/step-view.js?v=20261118"></script>
+  <script src="js/list-view.js?v=20261118"></script>
+  <script src="js/progress.js?v=20261118"></script>
+  <script src="js/memo.js?v=20261118"></script>
+  <script src="tests/fixtures.js?v=20261118"></script>
+  <script src="js/app.js?v=20261118"></script>
+</body>
+</html>

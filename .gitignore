@@ -1,0 +1,12 @@
+# 過去問の問題文と、その期待値を使うテスト（大学の試験問題のため公開しない）
+tests/fixtures.js
+tests/exam-tests.js
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,143 @@
+{
+  "category": "user-directory",
+  "description": "note「ユーザーディレクトリの開放」由来のテンプレート。ユーザー名 linux を試験の値に置き換える。",
+  "templates": [
+    {
+      "id": "ud-useradd",
+      "title": "ユーザーの作成",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        { "original": "sudo useradd linux", "template": "sudo useradd {{user}}" }
+      ],
+      "variables": { "user": { "noteValue": "linux" } },
+      "prerequisites": "LAMP環境構築済み",
+      "notes": [],
+      "verify": "エラーが出ないこと",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ユーザー名のみ変数化" }]
+    },
+    {
+      "id": "ud-passwd",
+      "title": "ユーザーのパスワード設定",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        { "original": "sudo passwd linux", "template": "sudo passwd {{user}}" }
+      ],
+      "inputs": [
+        { "label": "入力するパスワード（2回）", "value": "{{password}}", "secret": true }
+      ],
+      "variables": { "user": { "noteValue": "linux" }, "password": { "secret": true } },
+      "prerequisites": "ユーザー作成済み",
+      "notes": ["パスワードは画面に表示されません。貼り付け後 Enter を2回"],
+      "verify": "passwd: all authentication tokens updated successfully. と表示されること",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ユーザー名のみ変数化" }]
+    },
+    {
+      "id": "ud-conf",
+      "title": "userdir.conf の編集",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "once": true,
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        { "original": "sudo vi +17 /etc/httpd/conf.d/userdir.conf" }
+      ],
+      "editInstructions": [
+        "17行目の最初に#を付けてコメントアウト",
+        "24行目の#を消してpublic_htmlを{{public_dir}}に変更",
+        "31行目のpublic_htmlを{{public_dir}}に変更"
+      ],
+      "variables": { "public_dir": { "noteValue": "www", "confirmIfDifferent": true } },
+      "prerequisites": "Apache導入済み",
+      "notes": ["編集が終わったら保存する", "この設定はサーバ全体で1回だけ行えばよい"],
+      "verify": ":wq で保存してエラーが出ないこと",
+      "source": "note: ユーザーディレクトリの開放（userdir.conf）",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。編集内容はnoteの説明を表示" }]
+    },
+    {
+      "id": "ud-restart",
+      "title": "Apacheの再起動",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "once": true,
+      "runAs": "ec2-user（sudo）",
+      "workdir": "~",
+      "lines": [
+        { "original": "sudo systemctl restart httpd.service" }
+      ],
+      "variables": {},
+      "prerequisites": "userdir.conf 編集済み",
+      "notes": [],
+      "verify": "エラーが出ないこと",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録（原文）" }]
+    },
+    {
+      "id": "ud-su",
+      "title": "作成したユーザーに切り替え",
+      "kind": "aux",
+      "modes": ["bulk", "staged"],
+      "runAs": "ec2-user → {{user}}",
+      "workdir": "/home/{{user}}",
+      "lines": [
+        { "original": "su - linux", "template": "su - {{user}}", "kind": "aux" }
+      ],
+      "inputs": [
+        { "label": "su のパスワード", "value": "{{password}}", "secret": true }
+      ],
+      "variables": { "user": { "noteValue": "linux" }, "password": { "secret": true } },
+      "prerequisites": "ユーザー作成・パスワード設定済み",
+      "notes": [],
+      "verify": "プロンプトが [{{user}}@... ~]$ になること",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ユーザー名のみ変数化" }]
+    },
+    {
+      "id": "ud-chmod",
+      "title": "ホームディレクトリの権限変更",
+      "kind": "individual",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home/{{user}} → /home",
+      "lines": [
+        { "original": "cd ../", "kind": "aux" },
+        { "original": "chmod 755 linux/", "template": "chmod 755 {{user}}/" }
+      ],
+      "variables": { "user": { "noteValue": "linux" } },
+      "prerequisites": "{{user}} に切り替え済み",
+      "notes": [],
+      "verify": "エラーが出ないこと",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。ユーザー名のみ変数化" }]
+    },
+    {
+      "id": "ud-mkdir",
+      "title": "公開ディレクトリの作成",
+      "kind": "bulk",
+      "modes": ["bulk", "staged"],
+      "runAs": "{{user}}",
+      "workdir": "/home → /home/{{user}}/{{public_dir}}",
+      "lines": [
+        {
+          "original": "cd &&mkdir www &&cd www/",
+          "template": "cd &&mkdir {{public_dir}} &&cd {{public_dir}}/",
+          "staged": ["cd", "mkdir {{public_dir}}", "cd {{public_dir}}/"]
+        }
+      ],
+      "variables": { "user": { "noteValue": "linux" }, "public_dir": { "noteValue": "www", "confirmIfDifferent": true } },
+      "prerequisites": "{{user}} に切り替え済み",
+      "notes": [],
+      "verify": "プロンプトが ~/{{public_dir}} になること",
+      "source": "note: ユーザーディレクトリの開放",
+      "history": [{ "date": "2026-11-17", "change": "初期登録。公開ディレクトリ名を変数化（note値 www と異なる場合は確認必須）" }]
+    }
+  ]
+}
