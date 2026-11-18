@@ -16,11 +16,20 @@
         { "label": "インスタンスタイプ", "value": "{{instance_type}}" },
         { "label": "ストレージ容量", "value": "{{storage}}" },
         { "label": "キーペア名", "value": "{{key_pair_name}}" },
-        { "label": "ネットワーク設定", "value": "{{ports}}" },
-        { "label": "キーの権限設定（AWSの例）", "value": "{{ssh_chmod}}" },
-        { "label": "SSH接続（AWSの例）", "value": "{{ssh_command}}" },
-        { "label": "パブリックDNS", "value": "{{public_dns}}" }
+        { "label": "ネットワーク設定", "value": "{{ports}}" }
       ],
+      "guide": [
+        { "text": "「インスタンスを起動」画面の上から順に、名前に {{server_name}}、インスタンスタイプは {{instance_type}} を選ぶ", "practice": { "level": "free", "text": "名前もインスタンスタイプも何でもいい" } },
+        { "text": "マシンイメージ（AMI）は {{machine_image}} を選ぶ", "practice": { "level": "must", "text": "手順書のコマンドは Amazon Linux 2023 用なので、これは変えない" } },
+        { "text": "キーペア：「新しいキーペアの作成」を押し、キーペア名に {{key_pair_name}} を入力（タイピングミスに注意！）。タイプは RSA、形式は .pem のまま「キーペアを作成」→ .pem ファイルがダウンロードされる（接続に必要なので消さない）", "img": "img/aws-keypair.png", "practice": { "level": "must", "text": "キーペアは作る（名前は何でもいい）。接続に必要" } },
+        { "text": "ネットワーク設定：「SSH トラフィックを許可」「HTTPS トラフィックを許可」「HTTP トラフィックを許可」の3つにチェックを入れる", "img": "img/aws-network.png", "practice": { "level": "must", "text": "SSH は接続、HTTP はWebページの確認に必要" } },
+        { "text": "8888番ポート：ネットワーク設定の「編集」→ 下の「セキュリティグループルールを追加」。タイプは「カスタム TCP」、ポート範囲に 8888 を入力。※この写真のように「ソース」が空のままではダメ", "img": "img/aws-sg-8888-empty.png", "practice": { "level": "must", "text": "Jupyter Notebook を使うためにやっておく" } },
+        { "text": "「ソース」の欄に 0.0.0.0/0 と入力して選ぶ（ソースタイプを「Anywhere-IPv4」にしても同じ）。下に「0.0.0.0/0」が出て、見出しが（TCP, 8888, 0.0.0.0/0）になればOK", "img": "img/aws-sg-8888-ok.png", "practice": { "level": "must", "text": "Jupyter Notebook を使うためにやっておく" } },
+        { "text": "ストレージを設定：最初は 8 になっているので 30 に書き換える（gp3 のままでOK）。必ず「インスタンスを起動」を押す前に！", "img": "img/aws-storage-30.png", "practice": { "level": "must", "text": "Jupyter Notebook は容量が少ないと動かないのでやっておく" } },
+        { "text": "右側の「インスタンスを起動」を押す → インスタンス一覧で状態が「実行中（running）」になるまで待つ" }
+      ],
+      "practiceHideVars": true,
+      "practiceNote": "名前・インスタンスタイプ・キーペア名は何でもOK。ただし Jupyter Notebook のための 8888番ポートとストレージ30GiB、マシンイメージ（Amazon Linux 2023）はやっておきましょう。",
       "variables": {},
       "prerequisites": "-",
       "notes": [
@@ -28,13 +37,52 @@
         "キーペアは新しいものを作成する（タイピングミスに注意！）",
         "インターネットからのHTTPS・HTTPトラフィックを許可する",
         "Jupyter notebook のために、セキュリティグループルールを追加 → ポート番号 8888・ソース 0.0.0.0/0",
-        "Jupyter notebook のためにストレージを 30GiB にしておく（少なすぎると動かない。起動前に設定を終わらせる）",
-        "接続：パブリックインスタンスに接続 → 一般ユーザーからパブリックドメインを使って接続。AWSに表示される例をコピペして実行する（note記載）",
-        "AWSの「接続方法」の chmod・ssh の2行（またはターミナルの出力）を「パブリックDNS」欄に貼り付けると、パブリックDNSが取り出され、手順書のURL（publicDNS の部分）がすべて実際のアドレスになります"
+        "Jupyter notebook のためにストレージを 30GiB にしておく（少なすぎると動かない。起動前に設定を終わらせる）"
       ],
-      "verify": "インスタンスが running になり、SSH接続できること",
+      "verify": "インスタンスの状態が「実行中（running）」になること",
       "source": "note: インスタンスの起動",
-      "history": [{ "date": "2026-11-17", "change": "初期登録（設定値の表示のみ）" }]
+      "history": [
+        { "date": "2026-11-17", "change": "初期登録（設定値の表示のみ）" },
+        { "date": "2026-11-18", "change": "キーペア・ネットワーク・8888番ポート・ストレージの操作ガイド（写真）を追加" },
+        { "date": "2026-11-18", "change": "接続の説明は「インスタンスに接続」ステップへ移動" },
+        { "date": "2026-11-18", "change": "授業の課題・練習用に「課題なら自由／課題でもやる」の印を追加" }
+      ]
+    },
+    {
+      "id": "aws-connect",
+      "title": "インスタンスに接続（CloudShell）",
+      "kind": "checklist",
+      "modes": ["bulk", "staged"],
+      "runAs": "CloudShell（AWSのブラウザ上のターミナル）",
+      "workdir": "~",
+      "lines": [],
+      "connectPaste": true,
+      "hideVars": true,
+      "guide": [
+        { "text": "AWSの画面の左下にある「CloudShell」を押して開く（下に黒いターミナルが出る）", "img": "img/aws-instance-list.png" },
+        { "text": "CloudShell の右上の「アクション」→「ファイルのアップロード」→ インスタンス作成時にダウンロードした {{key_pair_name}}.pem を選んでアップロードする" },
+        { "text": "EC2 の「インスタンス」一覧で、今回起動したインスタンス（名前 {{server_name}}）の「インスタンス ID」（i-から始まる青い文字）をクリックする" },
+        { "text": "インスタンス概要の画面で、右上の「接続」をクリックする", "img": "img/aws-instance-detail.png" },
+        { "text": "「SSH クライアント」タブの「接続方法」に出ている chmod の行と ssh の行を、右のコピーボタンでコピーして、CloudShell に貼り付けて Enter（1行ずつ）", "img": "img/aws-connect-ssh.png" },
+        { "text": "初めて接続するときは「Are you sure you want to continue connecting (yes/no/[fingerprint])?」と聞かれるので yes と入力して Enter" },
+        { "text": "Amazon Linux 2023 の絵が出て、プロンプトが [ec2-user@ip-… ~]$ になれば接続完了" },
+        { "text": "実行した ssh の行（chmod の行と一緒でも、ターミナルの表示まるごとでもOK）を、上の「接続コマンドを貼り付け」欄に貼る → パブリックDNSが自動で取り出され、手順書の publicDNS がすべて実際のアドレスになります" }
+      ],
+      "reference": [
+        { "label": "キーの権限設定（AWSの例）", "value": "{{ssh_chmod}}" },
+        { "label": "SSH接続（AWSの例）", "value": "{{ssh_command}}" },
+        { "label": "パブリックDNS", "value": "{{public_dns}}" }
+      ],
+      "variables": {},
+      "prerequisites": "インスタンスが「実行中」・キーペアの .pem をダウンロード済み",
+      "notes": [
+        "シェルにキーペアを入れてアクセスする → パブリックインスタンスに接続する。一般ユーザーからパブリックドメインを使って接続する。例をコピペして実行するとできる（note記載）",
+        "chmod で「No such file or directory」と出たら、.pem のアップロードができていないか、ファイル名が違います",
+        "接続が切れたら、CloudShell で ssh の行をもう一度実行する（下の「SSH接続」をコピー）"
+      ],
+      "verify": "プロンプトが [ec2-user@ip-… ~]$ になること",
+      "source": "note: シェルにキーペアを入れてアクセスする",
+      "history": [{ "date": "2026-11-18", "change": "ユーザーの手順と写真をもとに追加（AWSが表示するコマンドを使う。コマンドは作らない）" }]
     }
   ]
 }

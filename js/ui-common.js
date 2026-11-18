@@ -107,11 +107,32 @@
     if (!onlyOpen) h += '<div class="var-editor-head">この手順で使う値 <span class="muted small">入力するとすぐ手順書に反映されます</span></div>';
     vars.forEach((v) => {
       h += '<label class="var-row st-' + esc(v.status) + '"><span class="var-label">' + esc(v.label) + (v.secret ? ' 🔒' : '') + '<small>' + esc(v.var) + '</small></span>' +
-        '<input type="text" spellcheck="false" autocomplete="off" data-action="edit-var" data-var="' + esc(v.var) + '" data-step="' + esc(step.uid) + '" value="' + esc(v.value) + '" placeholder="' + esc(v.hint || '（未入力）') + '">' +
+        '<span class="var-input"><input type="text" spellcheck="false" autocomplete="off" data-action="edit-var" data-var="' + esc(v.var) + '" data-step="' + esc(step.uid) + '" value="' + esc(v.value) + '" placeholder="' + esc(v.hint || '（未入力）') + '">' +
+        (v.modeHint ? '<small class="var-hint">💡 ' + esc(v.modeHint) + '</small>' : '') + '</span>' +
         chip(v.status) + '</label>';
     });
     h += '</div>';
     return h;
+  }
+
+  /**
+   * 接続コマンドの貼り付け欄（1つだけ）。ssh の行からパブリックDNSを取り出すので、DNSを別に打つ必要はない。
+   * 値の反映は他の入力欄と同じ edit-var（public_dns）を通る。
+   */
+  function connectPaste(step) {
+    const val = (name) => {
+      const r = (step.reference || []).find((x) => x.segments && x.segments.some((s) => s.var === name));
+      return r && r.copyable ? r.text : '';
+    };
+    const ssh = val('ssh_command');
+    const dns = val('public_dns');
+    let h = '<div class="var-editor connect-paste"><div class="var-editor-head">接続コマンドを貼り付け <span class="muted small">ssh の行を貼るだけでOK（パブリックDNSは自動で取り出します）</span></div>' +
+      '<input type="text" spellcheck="false" autocomplete="off" data-action="edit-var" data-var="public_dns" data-step="' + esc(step.uid) + '" value="' + esc(ssh || dns) + '" ' +
+      'placeholder="ssh -i &quot;xxx.pem&quot; ec2-user@ec2-…compute-1.amazonaws.com を貼り付け">';
+    h += dns
+      ? '<div class="connect-result">✓ パブリックDNS：<code>' + esc(dns) + '</code>（手順書の publicDNS に反映済み）</div>'
+      : '<div class="connect-result muted small">まだ貼り付けられていません</div>';
+    return h + '</div>';
   }
 
   /** 確認用URLを開く大きいボタン（publicDNS のままなら案内だけ） */
@@ -127,7 +148,8 @@
   /** 画面の見え方の説明（スクリーンショット付き） */
   function guideList(guide, compact) {
     if (!guide || !guide.length) return '';
-    return '<ol class="guide' + (compact ? ' compact' : '') + '">' + guide.map((g) => '<li><div>' + linkify(g.text) + '</div>' +
+    const badge = (p) => (p ? '<span class="practice practice-' + esc(p.level) + '">' + (p.level === 'must' ? '課題でもやる' : '課題なら自由') + (p.text ? '：' + esc(p.text) : '') + '</span>' : '');
+    return '<ol class="guide' + (compact ? ' compact' : '') + '">' + guide.map((g) => '<li' + (g.practice && g.practice.level === 'free' ? ' class="is-free"' : '') + '>' + badge(g.practice) + '<div>' + linkify(g.text) + '</div>' +
       (g.img ? (compact
         ? '<details><summary>画面の例</summary><img src="' + esc(g.img) + '" alt="" loading="lazy"></details>'
         : '<a href="' + esc(g.img) + '" target="_blank" rel="noopener"><img src="' + esc(g.img) + '" alt="画面の例" loading="lazy"></a>') : '') +
@@ -152,5 +174,5 @@
     return h;
   }
 
-  SES.UI = { esc, linkify, chip, segments, copyBtn, diff, commandLine, valueRow, memoItem, varEditor, checkUrlBox, guideList, STATUS_LABEL, KIND_SHORT };
+  SES.UI = { esc, linkify, chip, segments, copyBtn, diff, commandLine, valueRow, memoItem, varEditor, connectPaste, checkUrlBox, guideList, STATUS_LABEL, KIND_SHORT };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -57,6 +57,15 @@ eq('手入力: LAMP一括コマンドは原文のまま', mplan.sections.find((s
 eq('手入力: WordPressのダウンロードは原文のまま', mplan.sections.find((s) => s.uid === 't3').steps.find((s) => s.templateId === 'wp-download').lines[0].text,
   'cd /var/www &&wget https://ja.wordpress.org/latest-ja.tar.gz&&tar xzvf latest-ja.tar.gz');
 
+// 授業の課題・練習の印
+const awsLaunch = mplan.sections[0].steps.find((s) => s.templateId === 'aws-launch');
+eq('課題: 起動設定に「自由」と「やる」の印', awsLaunch.guide.map((g) => g.practice && g.practice.level), ['free', 'must', 'must', 'must', 'must', 'must', 'must', null]);
+eq('課題: 起動設定の値入力欄は出さない', awsLaunch.vars.length, 0);
+eq('課題: 説明あり', !!awsLaunch.practiceNote, true);
+
+const rootVar = mplan.sections.find((s) => s.type === 'lamp').steps.find((s) => s.templateId === 'lamp-mysql-password').vars.find((v) => v.var === 'mysql_root_password');
+eq('課題: rootパスワードは「自分で決めてOK」', /自分で決めた/.test(rootVar.modeHint), true);
+
 // ------------------------------------------------------------------
 // 手順書から値を入力 → 同じ変数を使うステップに反映
 // ------------------------------------------------------------------
@@ -84,6 +93,14 @@ VM.set(mm, mm.server, 'public_dns', pasted);
 eq('貼り付け後 public_dns', mv('public_dns').value, dns);
 eq('貼り付け後 ssh_command', mv('ssh_command').value, 'ssh -i "test.pem" ec2-user@' + dns);
 eq('サーバURL', mv('site_root').value, 'http://' + dns + '/');
+// 入力途中の文字はDNSにしない／ssh 欄に貼っても DNS が入る
+const mm2 = VM.build(Parser.createManual([{ type: 'lamp' }], defs), defs);
+VM.set(mm2, mm2.server, 'public_dns', 'ssh -i');
+eq('入力途中はDNSにしない', VM.get(mm2, mm2.server, 'public_dns').value, '');
+VM.set(mm2, mm2.server, 'ssh_command', 'ssh -i "a.pem" ec2-user@' + dns);
+eq('ssh 欄に貼ってもDNSが入る', VM.get(mm2, mm2.server, 'public_dns').value, dns);
+const conn = TE.buildPlan(mm2, defs, templates, { confirmations: {} }).sections[0].steps.find((s) => s.templateId === 'aws-connect');
+eq('接続ステップは貼り付け欄1つ（個別の入力欄なし）', [conn.connectPaste, conn.vars.length], [true, 0]);
 VM.set(mm, mm.tasks[0], 'phpmyadmin_url', 'http://publicDNS/phpMyAdmin/');
 eq('URLの publicDNS を置換', mv('phpmyadmin_url').value, 'http://' + dns + '/phpMyAdmin/');
 

@@ -54,6 +54,9 @@
       var: def.var.replace('{p}', prefix || ''),
       label: def.label,
       hint: def.hint || '',
+      // モードごとの一言（授業の課題・練習／テスト）
+      practiceHint: def.practiceHint || '',
+      examHint: def.examHint || '',
       secret: !!def.secret,
       multiline: !!def.multiline,
       derived: !!def.derived,
@@ -83,6 +86,7 @@
       examKey: parsed.examKey,
       warnings: parsed.warnings || [],
       manual: !!parsed.manual,
+      practice: !!parsed.practice,
       profile: makeTask('profile', defs.profile, {}, { type: 'profile', number: null, title: defs.profile.name }),
       server: makeTask('server', defs.types.server, parsed.server, { type: 'server', number: 0, title: 'サーバ基本情報' }),
       tasks: [],
@@ -248,14 +252,17 @@
   function set(model, task, key, value) {
     const f = task.fields[key];
     if (!f) return;
-    if (task.type === 'server' && key === 'public_dns') {
-      // ssh コマンドやターミナル出力を貼り付けた場合は、DNS・chmod・ssh を取り出して各欄へ
+    if (task.type === 'server' && ['public_dns', 'ssh_command', 'ssh_chmod'].indexOf(key) >= 0) {
+      // ssh の行やターミナル出力を貼り付けた場合は、DNS・chmod・ssh を取り出して各欄へ
+      // （パブリックDNSは ssh の行から分かるので、別に入力する必要はない）
       const c = parseConnection(value);
-      f.value = c.public_dns || value.trim();
-      f.edited = true;
-      ['ssh_command', 'ssh_chmod'].forEach((k) => {
+      const text = String(value || '').trim();
+      if (!text) { f.value = ''; f.edited = true; return; }
+      ['public_dns', 'ssh_command', 'ssh_chmod'].forEach((k) => {
         if (c[k] && task.fields[k]) { task.fields[k].value = c[k]; task.fields[k].edited = true; }
       });
+      // 何も取り出せなかったときは、その欄にだけ入れる（入力途中の文字をDNSとして使わない）
+      if (!c.public_dns && !c.ssh_command && !c.ssh_chmod && key !== 'public_dns') { f.value = text; f.edited = true; }
       return;
     }
     f.value = value;

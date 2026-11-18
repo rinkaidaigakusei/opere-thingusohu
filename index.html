@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Server Exam Support</title>
-  <link rel="stylesheet" href="css/style.css?v=20261118">
-  <link rel="stylesheet" href="css/responsive.css?v=20261118">
+  <link rel="stylesheet" href="css/style.css?v=20261118g">
+  <link rel="stylesheet" href="css/responsive.css?v=20261118g">
 </head>
 <body>
   <header class="app-header">
@@ -42,7 +42,19 @@
   <main>
     <!-- 画面1：問題文入力 -->
     <section id="screen-input" class="screen active">
-      <h2>問題文を貼り付け</h2>
+      <div class="usage-guide">
+        <div class="usage-col">
+          <strong>📝 テストのとき</strong>
+          <p>問題文を貼り付けて「解析する」→「2. 解析結果確認」で値を確認 →「手順書を生成」。ユーザー名やパスワードが毎回違うので、この流れで使います。</p>
+        </div>
+        <div class="usage-col">
+          <strong>📚 授業の課題・練習のとき</strong>
+          <p>問題文の貼り付けと解析結果の確認は<b>やらなくてOK</b>。下のボタンを押せば、手順書から始められます（値は手順書の各ステップで入力できます）。やる作業を選びたいときは、ページ下の「問題文を使わずに自分で設定する」で選んでから押してください。</p>
+          <button class="btn btn-primary small-btn usage-btn" data-action="quick">すぐ手順書を開く →</button>
+        </div>
+      </div>
+
+      <h2>問題文を貼り付け <small class="muted">（テストのとき）</small></h2>
       <p class="lead">試験問題のPDFから全文をコピーして貼り付け、「解析する」を押してください。解析はこのブラウザの中だけで行い、外部には送信しません。</p>
       <textarea id="problem-text" spellcheck="false" placeholder="2025年度 サーバ構築演習 …&#10;サーバ名 …&#10;課題 1: LAMP 環境の構築 …"></textarea>
       <div class="actions">
@@ -61,8 +73,8 @@
       <div id="load-error" class="notice notice-error" hidden></div>
 
       <div class="card manual-card">
-        <h3>問題文を使わずに自分で設定する</h3>
-        <p class="muted small">出題される課題を選んで「設定画面へ」を押すと、空の設定画面が開きます。値はすべて自分で入力します（共通パスワードを入れると、各パスワード欄に仮に反映されます）。</p>
+        <h3>問題文を使わずに自分で設定する <small class="muted">（授業の課題・練習のとき）</small></h3>
+        <p class="muted small">やる作業を選んでください。<b>「すぐ手順書を開く」</b>は確認画面を飛ばして手順書から始めます（値は各ステップの「この手順で使う値」に入力）。値を先にまとめて入れたいときは「設定画面へ」を押してください（共通パスワードを入れると、各パスワード欄に仮に反映されます）。</p>
         <div class="manual-grid">
           <label><input type="checkbox" data-manual="lamp" checked> LAMP環境</label>
           <label><input type="checkbox" data-manual="userdir" checked> ユーザーディレクトリ</label>
@@ -75,7 +87,10 @@
           <label><input type="checkbox" data-manual="docker_other"> 別イメージのDockerコンテナ</label>
         </div>
         <p class="muted small">課題番号は上から順に 1, 2, 3 … と振ります（追加のWordPressはJupyterの次）。</p>
-        <button class="btn btn-primary" data-action="manual">この内容で設定画面へ</button>
+        <div class="actions">
+          <button class="btn btn-primary" data-action="quick">すぐ手順書を開く</button>
+          <button class="btn" data-action="manual">設定画面へ（値をまとめて入力）</button>
+        </div>
       </div>
     </section>
 
@@ -109,18 +124,18 @@
     </section>
   </main>
 
-  <script src="js/parsing-rules.js?v=20261118"></script>
-  <script src="js/task-detector.js?v=20261118"></script>
-  <script src="js/parser.js?v=20261118"></script>
-  <script src="js/variable-manager.js?v=20261118"></script>
-  <script src="js/template-engine.js?v=20261118"></script>
-  <script src="js/clipboard.js?v=20261118"></script>
-  <script src="js/ui-common.js?v=20261118"></script>
-  <script src="js/step-view.js?v=20261118"></script>
-  <script src="js/list-view.js?v=20261118"></script>
-  <script src="js/progress.js?v=20261118"></script>
-  <script src="js/memo.js?v=20261118"></script>
-  <script src="tests/fixtures.js?v=20261118"></script>
-  <script src="js/app.js?v=20261118"></script>
+  <script src="js/parsing-rules.js?v=20261118g"></script>
+  <script src="js/task-detector.js?v=20261118g"></script>
+  <script src="js/parser.js?v=20261118g"></script>
+  <script src="js/variable-manager.js?v=20261118g"></script>
+  <script src="js/template-engine.js?v=20261118g"></script>
+  <script src="js/clipboard.js?v=20261118g"></script>
+  <script src="js/ui-common.js?v=20261118g"></script>
+  <script src="js/step-view.js?v=20261118g"></script>
+  <script src="js/list-view.js?v=20261118g"></script>
+  <script src="js/progress.js?v=20261118g"></script>
+  <script src="js/memo.js?v=20261118g"></script>
+  <script src="tests/fixtures.js?v=20261118g"></script>
+  <script src="js/app.js?v=20261118g"></script>
 </body>
 </html>

@@ -77,8 +77,11 @@
     startModel(Parser.parse(text));
   }
 
-  /** 手入力モード：選んだ課題だけの空の設定画面を作る */
-  function doManual() {
+  /**
+   * 手入力モード：選んだ課題だけの空の設定画面を作る
+   * quick=true（授業の課題・練習用）は確認画面を飛ばして、すぐ手順書を開く
+   */
+  function doManual(quick) {
     if (!state.defs) { Clipboard.toast('データを読み込めていません', 'warn'); return; }
     const checked = (type) => { const el = document.querySelector('[data-manual="' + type + '"]'); return el && el.checked; };
     const sel = [];
@@ -86,11 +89,11 @@
     const extra = Math.max(0, Math.min(5, Number(document.getElementById('manual-wp-extra').value) || 0));
     for (let i = 0; i < extra; i++) sel.push({ type: 'wordpress' });
     ['wpadmin_basic', 'docker_mysql', 'docker_other'].forEach((t) => { if (checked(t)) sel.push({ type: t }); });
-    if (!sel.length) { Clipboard.toast('課題を1つ以上選んでください', 'warn'); return; }
-    startModel(Parser.createManual(sel, state.defs));
+    if (!sel.length) { Clipboard.toast('作業を1つ以上選んでください', 'warn'); return; }
+    startModel(Parser.createManual(sel, state.defs), quick);
   }
 
-  function startModel(parsed) {
+  function startModel(parsed, quick) {
     state.model = VM.build(parsed, state.defs);
     state.prog = Progress.load(parsed.examKey);
     state.finalPlan = null;
@@ -98,6 +101,17 @@
     state.dirty = false;
     state.current = 0;
     recompute();
+    if (quick) {
+      // 確認画面を飛ばす（自分で選んだ作業なので、値は手順書のステップで入力する）
+      state.reviewed = true;
+      state.finalPlan = state.plan;
+      state.view = 'step';
+      saveUiPrefs();
+      enableTabs();
+      goto('procedure');
+      Clipboard.toast('手順書を開きました。値は各ステップの「この手順で使う値」に入力できます');
+      return;
+    }
     renderReview();
     enableTabs();
     goto('review');
@@ -118,6 +132,8 @@
       : '<input type="text" spellcheck="false" autocomplete="off" data-action="edit" data-task="' + e(task.uid) + '" data-key="' + e(key) + '" value="' + e(v.value) + '" placeholder="（未入力）">';
     const src = [];
     if (f.hint) src.push('<span class="src">' + e(f.hint) + '</span>');
+    const modeHint = state.model.practice ? f.practiceHint : f.examHint;
+    if (modeHint) src.push('<span class="src var-hint">💡 ' + e(modeHint) + '</span>');
     if (f.source && !f.derived) src.push('<span class="src" title="問題文の該当箇所">問題文：「' + e(f.source) + '」</span>');
     if (v.note) src.push('<span class="note">' + e(v.note) + '</span>');
     return '<tr class="frow st-' + e(v.status) + '"><th>' + e(f.label) + (f.secret ? ' <span class="lock" title="パスワード：保存・送信しません">🔒</span>' : '') + '<div class="var">' + e(f.var) + '</div></th>' +
@@ -370,13 +386,18 @@
     VM.set(state.model, ref.task, ref.key, input.value);
     recompute();
     state.finalPlan = state.plan; // 手順書の画面で入力した値は、その場で確定として反映
-    const sel = { v: input.dataset.var, s: input.dataset.step, pos: input.selectionStart };
+    const sel = { v: input.dataset.var, s: input.dataset.step, pos: input.selectionStart, text: input.value };
     rememberOpenSections();
     const y = window.scrollY;
     renderProcedure();
     window.scrollTo(0, y);
     const again = document.querySelector('[data-action="edit-var"][data-var="' + sel.v + '"][data-step="' + sel.s + '"]');
-    if (again) { again.focus(); try { again.setSelectionRange(sel.pos, sel.pos); } catch (err) { /* ignore */ } }
+    if (again) {
+      // 接続コマンドの入力途中（まだDNSが取り出せない）でも、打った文字は消さない
+      if (!again.value && sel.text) again.value = sel.text;
+      again.focus();
+      try { again.setSelectionRange(sel.pos, sel.pos); } catch (err) { /* ignore */ }
+    }
   }
 
   document.addEventListener('input', (ev) => {
@@ -441,7 +462,8 @@
     switch (a) {
       case 'goto': goto(t.dataset.screen); break;
       case 'parse': doParse(); break;
-      case 'manual': doManual(); break;
+      case 'manual': doManual(false); break;
+      case 'quick': doManual(true); break;
       case 'toggle-memo': {
         const p = document.getElementById('memo-panel');
         p.hidden = !p.hidden;

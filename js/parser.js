@@ -98,6 +98,7 @@
       examTitle: '手入力モード（問題文なし）',
       examKey: 'manual-' + day + '-' + examKey(sig),
       manual: true,
+      practice: true, // 授業の課題・練習（「課題なら自由」などの印を出す）
       server: {},
       tasks,
       warnings: [],

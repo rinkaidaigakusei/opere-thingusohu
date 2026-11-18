@@ -24,8 +24,10 @@
           '<button class="link" data-action="open-step" data-uid="' + e(step.uid) + '">詳細</button></div>';
         if (step.unregistered) h += '<p class="muted">note由来のコマンドテンプレートは未登録です。</p>';
         if ((step.kind === 'checklist' || step.unregistered) && step.notes.length) h += '<ul class="notes small muted">' + step.notes.map((n) => '<li>' + e(n) + '</li>').join('') + '</ul>';
+        if (step.practiceNote) h += '<div class="notice notice-practice small">📚 課題・練習：' + e(step.practiceNote) + '</div>';
         step.cautions.forEach((c) => { h += '<div class="notice notice-warn small">' + e(c) + '</div>'; });
         h += UI.varEditor(step, true);
+        if (step.connectPaste) h += UI.connectPaste(step);
         step.lines.forEach((l) => { h += UI.commandLine(l, opts.mode); });
         step.inputs.forEach((x) => { h += UI.valueRow(x); });
         if (step.editInstructions.length) h += '<ol class="edit-list small">' + step.editInstructions.map((x) => '<li>' + UI.segments(x) + '</li>').join('') + '</ol>';

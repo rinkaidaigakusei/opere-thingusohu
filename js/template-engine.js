@@ -107,6 +107,11 @@
     return { text, segments, unresolved, review, copyable: unresolved.length === 0 };
   }
 
+  /** 説明文用：未設定の値は {{変数名}} ではなく（項目名）で表示 */
+  function labelText(r) {
+    return r.segments.map((s) => (s.t === 'text' ? s.v : (s.value && s.status !== 'unset' ? s.value : '（' + (s.label || s.var) + '）'))).join('');
+  }
+
   function renderLine(line, ctx, state, task, tpl, mismatches) {
     let src = line.template || line.original;
     let staged = line.staged || null;
@@ -184,7 +189,7 @@
       templateId: tpl.id,
       taskUid: task.uid,
       // タイトルに未設定の値があるときは {{変数名}} ではなく項目名で表示
-      title: r(tpl.title).segments.map((s) => (s.t === 'text' ? s.v : (s.value && s.status !== 'unset' ? s.value : '（' + (s.label || s.var) + '）'))).join(''),
+      title: labelText(r(tpl.title)),
       kind: tpl.kind || 'individual',
       kindLabel: KIND_LABEL[tpl.kind || 'individual'],
       modes: tpl.modes || ['bulk', 'staged'],
@@ -199,7 +204,11 @@
       editInstructions: (tpl.editInstructions || []).map((s) => r(s)),
       reference: (tpl.reference || []).map((x) => Object.assign(r(x.value), { label: x.label, secret: !!x.secret })),
       checkUrl: tpl.checkUrl ? Object.assign(r(tpl.checkUrl.url), { label: tpl.checkUrl.label }) : null,
-      guide: (tpl.guide || []).map((g) => ({ text: r(g.text).text, img: g.img || '' })),
+      // practice: 授業の課題・練習のときだけ出す印（{ level: "free" | "must", text }）
+      guide: (tpl.guide || []).map((g) => ({ text: labelText(r(g.text)), img: g.img || '', practice: model.practice ? g.practice || null : null })),
+      practiceNote: model.practice && tpl.practiceNote ? labelText(r(tpl.practiceNote)) : '',
+      hideVars: !!(tpl.hideVars || (model.practice && tpl.practiceHideVars)),
+      connectPaste: !!tpl.connectPaste,
       prerequisites: r(tpl.prerequisites || '-').text,
       notes: (tpl.notes || []).map((n) => r(n).text),
       cautions,
@@ -225,7 +234,8 @@
         const v = VM.get(model, ref.task, ref.key);
         if (v.status === 'na') return;
         const f = ref.task.fields[ref.key];
-        vars.push({ var: s.var, label: v.label, value: v.value, status: v.status, secret: !!v.secret, note: v.note, hint: f.hint || '', taskUid: ref.task.uid, key: ref.key, pending: s.status === 'pending' || /確認するまで/.test(s.note || '') });
+        const modeHint = model.practice ? f.practiceHint : f.examHint;
+        vars.push({ var: s.var, label: v.label, value: v.value, status: v.status, secret: !!v.secret, note: v.note, hint: f.hint || '', modeHint: modeHint || '', taskUid: ref.task.uid, key: ref.key, pending: s.status === 'pending' || /確認するまで/.test(s.note || '') });
       });
     };
     step.lines.forEach((l) => { visit(l); (l.staged || []).forEach(visit); });
@@ -234,7 +244,7 @@
     step.editInstructions.forEach(visit);
     step.reference.forEach(visit);
     if (step.checkUrl) visit(step.checkUrl);
-    step.vars = vars;
+    step.vars = step.hideVars ? [] : vars;
     return step;
   }
 

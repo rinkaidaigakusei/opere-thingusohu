@@ -27,8 +27,10 @@
       h += '<div class="notice notice-warn">この課題（作業）に対応するnote由来のコマンドテンプレートはまだ登録されていません。<br>' +
         '課題の検出：完了 ／ 設定値の抽出：可能な範囲で実施 ／ 手順書：テンプレート未登録 ／ コマンド：未設定</div>';
     }
+    if (step.practiceNote) h += '<div class="notice notice-practice">📚 <b>授業の課題・練習のとき：</b>' + e(step.practiceNote) + '</div>';
     step.cautions.forEach((c) => { h += '<div class="notice notice-warn">' + e(c) + '</div>'; });
     h += UI.varEditor(step, false);
+    if (step.connectPaste) h += UI.connectPaste(step);
 
     if (step.lines.length) {
       h += '<section class="step-sec"><h4>実行するコマンド</h4>';

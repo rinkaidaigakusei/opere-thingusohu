@@ -18,18 +18,20 @@
         { "key": "key_pair_name", "var": "key_pair_name", "label": "キーペア名" },
         { "key": "ports", "var": "ports", "label": "開放するポート" },
         { "key": "common_password", "var": "common_password", "label": "共通パスワード", "secret": true },
-        { "key": "public_dns", "var": "public_dns", "label": "パブリックDNS（接続後に入力）", "workValue": true, "hint": "AWSの「接続」の ssh コマンドやターミナル出力を貼り付けてもOK" },
+        { "key": "public_dns", "var": "public_dns", "label": "パブリックDNS（ssh の行から自動）", "workValue": true, "hint": "ssh の行やターミナル出力を貼り付け（DNSが自動で入ります）" },
         { "key": "ssh_chmod", "var": "ssh_chmod", "label": "キーの権限設定（AWSの例）", "workValue": true, "hint": "貼り付けから自動で入ります" },
         { "key": "ssh_command", "var": "ssh_command", "label": "SSH接続コマンド（AWSの例）", "workValue": true, "hint": "貼り付けから自動で入ります" },
         { "key": "site_root", "var": "site_root", "label": "サーバのURL（パブリックDNSから作成）", "derived": true, "workValue": true }
       ],
-      "steps": [{ "template": "aws-launch" }]
+      "steps": [{ "template": "aws-launch" }, { "template": "aws-connect" }]
     },
     "lamp": {
       "name": "LAMP環境",
       "fields": [
         { "key": "phpmyadmin_url", "var": "phpmyadmin_url", "label": "phpMyAdminのURL" },
-        { "key": "mysql_root_password", "var": "mysql_root_password", "label": "MySQL rootパスワード", "secret": true },
+        { "key": "mysql_root_password", "var": "mysql_root_password", "label": "MySQL rootパスワード", "secret": true,
+          "practiceHint": "課題なら自分で決めたパスワードでOK（phpMyAdmin のログインに使うので、メモしておく）",
+          "examHint": "テストでは問題文で決められたパスワードにする（採点で root ログインを確認されます）" },
         { "key": "mysql_temp_password", "var": "mysql_temp_password", "label": "MySQL初期パスワード（作業中に確認）", "secret": true, "workValue": true, "hint": "mysqld.log の root の後ろ（作業中に入力）" }
       ],
       "steps": [
