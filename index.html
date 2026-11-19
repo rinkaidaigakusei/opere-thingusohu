@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Server Exam Support</title>
-  <link rel="stylesheet" href="css/style.css?v=20261118g">
-  <link rel="stylesheet" href="css/responsive.css?v=20261118g">
+  <link rel="stylesheet" href="css/style.css?v=20261119">
+  <link rel="stylesheet" href="css/responsive.css?v=20261119">
 </head>
 <body>
   <header class="app-header">
@@ -56,6 +56,24 @@
 
       <h2>問題文を貼り付け <small class="muted">（テストのとき）</small></h2>
       <p class="lead">試験問題のPDFから全文をコピーして貼り付け、「解析する」を押してください。解析はこのブラウザの中だけで行い、外部には送信しません。</p>
+
+      <div class="ai-box">
+        <div class="ai-head">
+          <strong>🤖 問題が画像・写真で届いて、文字をコピーできないとき</strong>
+          <button class="btn btn-primary small-btn" data-action="copy-ai-prompt">AI用プロンプトをコピー</button>
+        </div>
+        <ol class="ai-steps">
+          <li>上の <b>「AI用プロンプトをコピー」</b> を押す</li>
+          <li>ChatGPT・Gemini・Claude などを開き、<b>問題の画像（またはPDF）を添付</b>して、コピーしたプロンプトを貼り付けて送る</li>
+          <li>返ってきた文字を全部コピーして、下の入力欄に貼り付けて <b>「解析する」</b></li>
+          <li>「2. 解析結果確認」で、<b>パスワードやユーザー名が問題の画像と同じか必ず見比べる</b>（AIは読み間違えることがあります）</li>
+        </ol>
+        <details class="ai-prompt-view">
+          <summary>プロンプトの中身を見る</summary>
+          <pre id="ai-prompt-text">読み込み中…</pre>
+        </details>
+        <p class="muted small">⚠️ テスト中に AI を使ってよいかは、担当の先生のルールに従ってください。問題文は AI のサービスに送られます。</p>
+      </div>
       <textarea id="problem-text" spellcheck="false" placeholder="2025年度 サーバ構築演習 …&#10;サーバ名 …&#10;課題 1: LAMP 環境の構築 …"></textarea>
       <div class="actions">
         <button class="btn btn-primary" data-action="parse">解析する</button>
@@ -124,18 +142,18 @@
     </section>
   </main>
 
-  <script src="js/parsing-rules.js?v=20261118g"></script>
-  <script src="js/task-detector.js?v=20261118g"></script>
-  <script src="js/parser.js?v=20261118g"></script>
-  <script src="js/variable-manager.js?v=20261118g"></script>
-  <script src="js/template-engine.js?v=20261118g"></script>
-  <script src="js/clipboard.js?v=20261118g"></script>
-  <script src="js/ui-common.js?v=20261118g"></script>
-  <script src="js/step-view.js?v=20261118g"></script>
-  <script src="js/list-view.js?v=20261118g"></script>
-  <script src="js/progress.js?v=20261118g"></script>
-  <script src="js/memo.js?v=20261118g"></script>
-  <script src="tests/fixtures.js?v=20261118g"></script>
-  <script src="js/app.js?v=20261118g"></script>
+  <script src="js/parsing-rules.js?v=20261119"></script>
+  <script src="js/task-detector.js?v=20261119"></script>
+  <script src="js/parser.js?v=20261119"></script>
+  <script src="js/variable-manager.js?v=20261119"></script>
+  <script src="js/template-engine.js?v=20261119"></script>
+  <script src="js/clipboard.js?v=20261119"></script>
+  <script src="js/ui-common.js?v=20261119"></script>
+  <script src="js/step-view.js?v=20261119"></script>
+  <script src="js/list-view.js?v=20261119"></script>
+  <script src="js/progress.js?v=20261119"></script>
+  <script src="js/memo.js?v=20261119"></script>
+  <script src="tests/fixtures.js?v=20261119"></script>
+  <script src="js/app.js?v=20261119"></script>
 </body>
 </html>

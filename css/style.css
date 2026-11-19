@@ -105,6 +105,13 @@ h4 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
 .usage-btn:hover:not(:disabled) { background: #146a3e; }
 h2 small { font-size: 14px; font-weight: 400; }
 h3 small { font-size: 13px; font-weight: 400; }
+.ai-box { background: #f7f5ff; border: 1px solid #ddd4fb; border-radius: var(--radius); padding: 10px 14px; margin: 0 0 12px; }
+.ai-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ai-steps { margin: 6px 0 4px; padding-left: 22px; font-size: 14px; }
+.ai-steps li { margin: 2px 0; }
+.ai-prompt-view summary { cursor: pointer; color: var(--primary); font-size: 13px; }
+.ai-prompt-view pre { white-space: pre-wrap; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: 13px; max-height: 320px; overflow: auto; }
+.ai-box p { margin: 4px 0 0; }
 .manual-card { margin-top: 22px; }
 .manual-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 16px; margin: 8px 0; }
 .manual-grid label { display: flex; gap: 6px; align-items: center; }

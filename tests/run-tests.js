@@ -105,6 +105,73 @@ VM.set(mm, mm.tasks[0], 'phpmyadmin_url', 'http://publicDNS/phpMyAdmin/');
 eq('URLの publicDNS を置換', mv('phpmyadmin_url').value, 'http://' + dns + '/phpMyAdmin/');
 
 // ------------------------------------------------------------------
+// AIで文字起こしした文（架空の問題）。プロンプトどおりの形と、Markdown で返ってきた形
+// ------------------------------------------------------------------
+console.log('■ AI文字起こし');
+const AI_PLAIN = `2099年度 サーバ構築演習 サンプル
+サーバ名 Sample01
+マシンイメージ Amazon Linux 2023 AMI(アーキテクチャ変更なし)
+インスタンスタイプ t2.small を推奨
+ストレージ容量 30GB
+キーペア 新規発行
+キーペア名:Sample01
+ネットワーク設定 HTTP, HTTPS を許可、8888 を開放
+・サーバを設定するとき全てのパスワードは、「Sample01@」とする
+課題 1: LAMP 環境の構築(50 点)
+・root で指定されたパスワードでログインできるかを確認します
+・投稿 URL は、「http://publicDNS/phpMyAdmin/」となる。
+課題 2: ユーザディレクトリの解放(25 点)
+作成するユーザ名は「taro」、パスワードは「Sample01@」とする。
+公開ディレクトリは「www」とし、新規作成したユーザの公開フォルダ内に index.html を作成しなさい。index.html の内容は、以下のとおりとします。
+Hello 学籍番号
+・投稿 URL は、「http://publicDNS/~taro/」となる。
+課題 3: Jupyter 環境の構築(25 点)
+Jupyter 環境を設置するユーザ taro
+Jupyter にログインするパスワード Sample01@
+Jupyter にアクセスするポート 8888
+・投稿 URL は、「http://publicDNS:8888」 となる
+以上`;
+const AI_MARKDOWN = '```\n' + `# 2099年度 サーバ構築演習 サンプル
+
+| 項目 | 内容 |
+|---|---|
+| サーバ名 | Sample01 |
+| マシンイメージ | Amazon Linux 2023 AMI(アーキテクチャ変更なし) |
+| インスタンスタイプ | t2.small を推奨 |
+| ストレージ容量 | 30GB |
+| キーペア | 新規発行 キーペア名:Sample01 |
+| ネットワーク設定 | HTTP, HTTPS を許可、8888 を開放 |
+
+- サーバを設定するとき全てのパスワードは、「Sample01@」とする
+
+## **課題 1: LAMP 環境の構築(50 点)**
+- root で指定されたパスワードでログインできるかを確認します
+- 投稿 URL は、「http://publicDNS/phpMyAdmin/」となる。
+
+## **課題 2: ユーザディレクトリの解放(25 点)**
+作成するユーザ名は「**taro**」、パスワードは「Sample01@」とする。
+公開ディレクトリは「www」とし、新規作成したユーザの公開フォルダ内に index.html を作成しなさい。index.html の内容は、以下のとおりとします。
+Hello 学籍番号
+- 投稿 URL は、「http://publicDNS/~taro/」となる。
+
+## **課題 3: Jupyter 環境の構築(25 点)**
+| Jupyter 環境を設置するユーザ | taro |
+|---|---|
+| Jupyter にログインするパスワード | Sample01@ |
+| Jupyter にアクセスするポート | 8888 |
+- 投稿 URL は、「http://publicDNS:8888」 となる
+以上` + '\n```';
+const KEYS = ['server_name', 'instance_type', 'storage', 'key_pair_name', 'ports', 'common_password', 'mysql_root_password', 'linux_user', 'linux_password', 'public_dir', 'index_file_name', 'index_file_content', 'userdir_url', 'jupyter_user', 'jupyter_password', 'jupyter_port', 'jupyter_url'];
+const aiPlain = load(AI_PLAIN);
+const aiMd = load(AI_MARKDOWN);
+eq('AI(プロンプトどおり): 課題', aiPlain.parsed.tasks.map((t) => t.type), ['lamp', 'userdir', 'jupyter']);
+eq('AI(プロンプトどおり): 値', KEYS.map((k) => aiPlain.v(k).value), ['Sample01', 't2.small', '30GB', 'Sample01', 'HTTP, HTTPS, 8888', 'Sample01@', 'Sample01@', 'taro', 'Sample01@', 'www', 'index.html', 'Hello 学籍番号', 'http://publicDNS/~taro/', 'taro', 'Sample01@', '8888', 'http://publicDNS:8888']);
+eq('AI(Markdown): 課題', aiMd.parsed.tasks.map((t) => t.type), ['lamp', 'userdir', 'jupyter']);
+eq('AI(Markdown): 値はプロンプトどおりの場合と同じ', KEYS.map((k) => aiMd.v(k).value), KEYS.map((k) => aiPlain.v(k).value));
+eq('判読不能があれば警告', load(AI_PLAIN.replace('Sample01@」とする', '［判読不能］」とする')).parsed.warnings.some((w) => /判読不能/.test(w)), true);
+eq('プロンプトのファイルがある', fs.readFileSync(path.join(root, 'data/ai-prompt.txt'), 'utf8').includes('課題 番号:'), true);
+
+// ------------------------------------------------------------------
 // 過去問（あれば）
 // ------------------------------------------------------------------
 let F = null, examTests = null;

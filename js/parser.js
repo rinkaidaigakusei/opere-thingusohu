@@ -17,10 +17,31 @@
   const NON_ASCII = '[^\\x00-\\x7F]';
 
   function normalizeRaw(text) {
-    return String(text || '')
+    return cleanMarkdown(String(text || '')
       .normalize('NFKC')
       .replace(/\r\n?/g, '\n')
-      .replace(/ /g, ' ');
+      .replace(/ /g, ' '));
+  }
+
+  /**
+   * AIで文字起こしした文が Markdown（表・太字・見出し・コードブロック・箇条書き）になっていても読めるようにする。
+   * 例）「| サーバ名 | Sample01 |」→「サーバ名 Sample01」、「**課題 1:**」→「課題 1:」
+   */
+  function cleanMarkdown(s) {
+    return s
+      .split('\n')
+      .filter((l) => !/^\s*```/.test(l)) // コードブロックの区切り
+      .filter((l) => !/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(l)) // 表の区切り |---|---|
+      .map((l) => {
+        let x = l;
+        if (/^\s*\|.*\|\s*$/.test(x)) x = x.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()).filter((c) => c).join(' ');
+        x = x.replace(/^\s{0,3}#{1,6}\s+/, ''); // 見出し
+        x = x.replace(/^\s{0,3}>\s?/, ''); // 引用
+        x = x.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1'); // 太字
+        x = x.replace(/^(\s*)[-*]\s+(?=\S)/, '$1・'); // 箇条書き → ・
+        return x;
+      })
+      .join('\n');
   }
 
   function toCompact(raw) {
@@ -62,6 +83,7 @@
     });
 
     const warnings = [];
+    if (/判読不能/.test(raw)) warnings.push('［判読不能］の部分があります（AIが読み取れなかった文字）。問題の画像を見て、該当する値を直接入力してください。');
     if (!tasks.length) warnings.push('「課題 N :」形式の見出しが見つかりませんでした。問題文全体を貼り付けたか確認してください。');
     const nums = tasks.map((t) => t.number);
     nums.forEach((n, i) => { if (nums.indexOf(n) !== i) warnings.push('課題' + n + 'が重複して検出されました。'); });
@@ -105,7 +127,7 @@
     };
   }
 
-  const Parser = { parse, normalizeRaw, toCompact, createManual };
+  const Parser = { parse, normalizeRaw, toCompact, createManual, cleanMarkdown };
   SES.Parser = Parser;
   if (typeof module !== 'undefined' && module.exports) module.exports = Parser;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -34,6 +34,13 @@
     state.defs = await get('data/tasks.json');
     const files = await Promise.all(TEMPLATE_FILES.map((n) => get('data/templates/' + n + '.json')));
     state.templates = TE.indexTemplates(files);
+    // AIに文字起こしさせるためのプロンプト（data/ai-prompt.txt を編集すれば変えられる）
+    try {
+      const r = await fetch('data/ai-prompt.txt', { cache: 'no-cache' });
+      if (r.ok) state.aiPrompt = (await r.text()).trim();
+    } catch (err) { /* プロンプトが無くても他の機能は動く */ }
+    const pre = document.getElementById('ai-prompt-text');
+    if (pre) pre.textContent = state.aiPrompt || '（プロンプトを読み込めませんでした）';
   }
 
   function loadUiPrefs() {
@@ -464,6 +471,13 @@
       case 'parse': doParse(); break;
       case 'manual': doManual(false); break;
       case 'quick': doManual(true); break;
+      case 'copy-ai-prompt': {
+        if (!state.aiPrompt) { Clipboard.toast('プロンプトを読み込めていません', 'warn'); break; }
+        const ok = await Clipboard.copy(state.aiPrompt);
+        Clipboard.toast(ok ? 'プロンプトをコピーしました。AIに問題の画像と一緒に貼り付けてください' : 'コピーできませんでした', ok ? '' : 'warn');
+        if (ok) { t.classList.add('copied'); t.textContent = 'コピーしました ✓'; setTimeout(() => { t.classList.remove('copied'); t.textContent = 'AI用プロンプトをコピー'; }, 1800); }
+        break;
+      }
       case 'toggle-memo': {
         const p = document.getElementById('memo-panel');
         p.hidden = !p.hidden;
